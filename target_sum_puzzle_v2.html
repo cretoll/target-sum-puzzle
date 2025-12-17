@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Target Sum Slider Puzzle (Row+Col)</title>
+  <style>
+    :root{
+      --bg:#0b0c10;
+      --text:#e9e9ef;
+      --muted:#a7a8b5;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+      --gap: 10px;
+      --cell: 72px;
+      --labelH: 40px;
+      --sideW: 120px;
+
+      --accentA: rgba(139,211,255,.45);
+      --accentB: rgba(124,255,178,.40);
+      --ok: rgba(124,255,178,.92);
+      --bad: rgba(255,124,124,.92);
+    }
+    @media (max-width: 420px){
+      :root{ --cell: 64px; --gap: 9px; --sideW: 112px; --labelH: 38px; }
+    }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 50% -10%, rgba(139,211,255,.16), transparent 70%),
+                  radial-gradient(900px 500px at 10% 20%, rgba(124,255,178,.10), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px 14px 24px;
+      box-sizing:border-box;
+    }
+    .app{
+      width:min(980px, 100%);
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 880px){
+      .app{
+        grid-template-columns: 420px 1fr;
+        gap: 16px;
+        align-items:start;
+      }
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .hd{
+      padding: 16px 16px 10px;
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .title{
+      font-size: 18px;
+      letter-spacing: -.2px;
+      margin:0;
+      font-weight: 850;
+    }
+    .sub{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .body{ padding: 12px 16px 16px; }
+
+    .row{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+    }
+    .btn{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 750;
+      letter-spacing: -.1px;
+      transition: transform .06s ease, border-color .12s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: rgba(139,211,255,.35); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{ border-color: rgba(139,211,255,.35); background: rgba(139,211,255,.10); }
+
+    .kv{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .stat{
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+    }
+    .stat .k{ font-size: 12px; color: var(--muted); }
+    .stat .v{
+      font-size: 18px;
+      font-weight: 850;
+      margin-top: 2px;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+    .note{
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .boardWrap{
+      display:flex;
+      justify-content:center;
+      padding: 16px;
+    }
+    .frame{
+      display:grid;
+      grid-template-columns: repeat(4, var(--cell)) var(--sideW);
+      grid-template-rows: var(--labelH) repeat(4, var(--cell));
+      gap: var(--gap);
+      touch-action: manipulation;
+      user-select:none;
+      align-items:stretch;
+      justify-items:stretch;
+    }
+
+    .topLabel{
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.16);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 0 6px;
+      text-align:center;
+      line-height: 1.15;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+    .rightLabel{
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.16);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 0 8px;
+      text-align:center;
+      line-height: 1.15;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+    .topLabel.active{
+      border-color: var(--accentB);
+      color: rgba(255,255,255,.92);
+      box-shadow: inset 0 0 0 1px rgba(124,255,178,.10);
+    }
+    .rightLabel.active{
+      border-color: var(--accentA);
+      color: rgba(255,255,255,.92);
+      box-shadow: inset 0 0 0 1px rgba(139,211,255,.10);
+    }
+    .delta{
+      font-weight: 900;
+      margin-left: 6px;
+    }
+    .delta.ok{ color: var(--ok); }
+    .delta.bad{ color: var(--bad); }
+
+    .tile{
+      position:relative;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 22px;
+      font-weight: 850;
+      letter-spacing: .2px;
+      color: var(--text);
+      cursor:pointer;
+      transition: transform .08s ease, border-color .12s ease, background .12s ease;
+    }
+    .tile:hover{ transform: translateY(-1px); border-color: rgba(139,211,255,.35); }
+    .tile:active{ transform: translateY(1px); }
+    .tile.blank{
+      background: transparent;
+      border: 1px dashed rgba(255,255,255,.10);
+      cursor: default;
+    }
+    .tile.blank:hover{ transform:none; border-color: rgba(255,255,255,.10); }
+
+    .tile.inRow{ outline: 2px solid rgba(139,211,255,.22); outline-offset: -2px; }
+    .tile.inCol{ box-shadow: inset 0 0 0 2px rgba(124,255,178,.18); }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.52);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 50;
+    }
+    .modal.show{ display:flex; }
+    .modalCard{
+      width: min(420px, 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 18px;
+      box-shadow: 0 16px 50px rgba(0,0,0,.45);
+      padding: 16px 16px 14px;
+    }
+    .modalTitle{
+      font-weight: 950;
+      letter-spacing: -.3px;
+      font-size: 18px;
+      margin:0 0 6px 0;
+    }
+    .modalBody{
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 0 0 12px 0;
+    }
+    .modalActions{
+      display:flex;
+      justify-content:flex-end;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="card">
+      <div class="hd">
+        <h1 class="title">Target Sum 퍼즐</h1>
+        <div class="sub" id="stageMeta">Stage 1</div>
+      </div>
+      <div class="body">
+        <div class="row">
+          <button class="btn" id="btnRestart">재시작</button>
+          </div>
+
+        <div class="kv">
+          <div class="stat">
+            <div class="k">총 이동</div>
+            <div class="v" id="moveCount">0</div>
+          </div>
+          <div class="stat">
+            <div class="k">남은 시간</div>
+            <div class="v" id="timeLeft">03:00</div>
+          </div>
+        </div>
+
+        <div class="note">
+          목표: <b>가로 1줄</b>과 <b>세로 1줄</b>의 합을 동시에 맞추기.<br/>
+          표기: 목표값 / (목표 - 현재). 예) <b>10 / +2</b> 는 현재 합이 8이라는 뜻.
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="hd">
+        <div>
+          <div class="title" style="font-size:16px;margin:0;">보드</div>
+          <div class="sub" id="boardSub">4×4 / 빈칸(□)은 0으로 계산</div>
+        </div>
+        <div class="sub" id="statusSub"></div>
+      </div>
+      <div class="boardWrap">
+        <div class="frame" id="frame" aria-label="퍼즐 보드"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="modal" role="dialog" aria-modal="true">
+    <div class="modalCard">
+      <h2 class="modalTitle" id="modalTitle">클리어</h2>
+      <p class="modalBody" id="modalBody"></p>
+      <div class="modalActions">
+        <button class="btn primary" id="modalOk">확인</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  const SIZE = 4;
+  const CELLS = SIZE * SIZE;
+  const DIGIT_MIN = 0;
+  const DIGIT_MAX = 9;
+
+  const STAGE_TIME_SEC = 180;
+
+  let stage = 1;
+
+  let startBoard = null;
+  let board = null;
+  let blank = 15;
+
+  let targetRow = 0;
+  let targetCol = 0;
+  let targetRowSum = 0;
+  let targetColSum = 0;
+
+  let moveCount = 0;
+
+  let timeLeft = STAGE_TIME_SEC;
+  let timerId = null;
+
+  let cleared = false;
+  let gameOver = false;
+
+  const elFrame = document.getElementById("frame");
+  const elStageMeta = document.getElementById("stageMeta");
+  const elMoveCount = document.getElementById("moveCount");
+  const elTimeLeft = document.getElementById("timeLeft");
+  const elStatusSub = document.getElementById("statusSub");
+
+  const btnRestart = document.getElementById("btnRestart");
+
+  const modal = document.getElementById("modal");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalBody = document.getElementById("modalBody");
+  const modalOk = document.getElementById("modalOk");
+
+  const randInt = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const fmtTime = (sec) => `${pad2(Math.floor(sec/60))}:${pad2(sec%60)}`;
+  const fmtDelta = (d) => (d > 0 ? `+${d}` : `${d}`);
+
+  function cloneBoard(b){ return b.slice(); }
+
+  function isAdjacent(i, j){
+    const r1 = Math.floor(i / SIZE), c1 = i % SIZE;
+    const r2 = Math.floor(j / SIZE), c2 = j % SIZE;
+    return (Math.abs(r1-r2) + Math.abs(c1-c2)) === 1;
+  }
+
+  function neighborsOfBlank(blankIdx){
+    const r = Math.floor(blankIdx / SIZE), c = blankIdx % SIZE;
+    const n = [];
+    if(r>0) n.push(blankIdx - SIZE);
+    if(r<SIZE-1) n.push(blankIdx + SIZE);
+    if(c>0) n.push(blankIdx - 1);
+    if(c<SIZE-1) n.push(blankIdx + 1);
+    return n;
+  }
+
+  function sumRow(b, r){
+    let s = 0;
+    for(let c=0;c<SIZE;c++){
+      const v = b[r*SIZE + c];
+      s += (v === null ? 0 : v);
+    }
+    return s;
+  }
+  function sumCol(b, c){
+    let s = 0;
+    for(let r=0;r<SIZE;r++){
+      const v = b[r*SIZE + c];
+      s += (v === null ? 0 : v);
+    }
+    return s;
+  }
+
+  function generateRandomBoard(){
+    const nums = [];
+    for(let i=0;i<CELLS-1;i++){
+      nums.push(randInt(DIGIT_MIN, DIGIT_MAX));
+    }
+    const blankPos = randInt(0, CELLS-1);
+    const arr = new Array(CELLS);
+    let k=0;
+    for(let i=0;i<CELLS;i++){
+      if(i===blankPos) arr[i] = null;
+      else arr[i] = nums[k++];
+    }
+    return arr;
+  }
+
+  function makeReachableGoalFromStart(start, steps){
+    let b = cloneBoard(start);
+    let blankIdx = b.indexOf(null);
+    let prevBlank = -1;
+
+    for(let s=0; s<steps; s++){
+      const neigh = neighborsOfBlank(blankIdx).filter(n => n !== prevBlank);
+      const list = neigh.length ? neigh : neighborsOfBlank(blankIdx);
+      const pick = list[randInt(0, list.length-1)];
+      b[blankIdx] = b[pick];
+      b[pick] = null;
+      prevBlank = blankIdx;
+      blankIdx = pick;
+    }
+    return b;
+  }
+
+  function hiddenStepsForStage(st){
+    return Math.min(90, 10 + st * 4);
+  }
+
+  function newStage(st){
+    stage = st;
+
+    cleared = false;
+    gameOver = false;
+    hideModal();
+
+    const start = generateRandomBoard();
+    targetRow = randInt(0, SIZE-1);
+    targetCol = randInt(0, SIZE-1);
+
+    const goal = makeReachableGoalFromStart(start, hiddenStepsForStage(stage));
+    targetRowSum = sumRow(goal, targetRow);
+    targetColSum = sumCol(goal, targetCol);
+
+    startBoard = cloneBoard(start);
+    board = cloneBoard(start);
+    blank = board.indexOf(null);
+
+    moveCount = 0;
+    timeLeft = STAGE_TIME_SEC;
+
+    renderAll();
+    startTimer();
+  }
+
+  function restartStage(){
+    cleared = false;
+    gameOver = false;
+    hideModal();
+
+    board = cloneBoard(startBoard);
+    blank = board.indexOf(null);
+
+    moveCount = 0;
+    timeLeft = STAGE_TIME_SEC;
+
+    renderAll();
+    startTimer();
+  }
+
+  function stopTimer(){
+    if(timerId !== null){
+      clearInterval(timerId);
+      timerId = null;
+    }
+  }
+
+  function startTimer(){
+    stopTimer();
+    elTimeLeft.textContent = fmtTime(timeLeft);
+    timerId = setInterval(() => {
+      if(cleared || gameOver) return;
+      timeLeft--;
+      if(timeLeft < 0) timeLeft = 0;
+      elTimeLeft.textContent = fmtTime(timeLeft);
+
+      if(timeLeft === 0){
+        gameOver = true;
+        stopTimer();
+        updateStatus();
+        showModal("게임 오버", `3분이 초과되었습니다.<br/>총 이동: ${moveCount}`, "다시 시작", () => {
+          restartStage();
+        });
+      }
+    }, 1000);
+  }
+
+  function renderAll(){
+    elStageMeta.textContent = `Stage ${stage}`;
+    elMoveCount.textContent = String(moveCount);
+    elTimeLeft.textContent = fmtTime(timeLeft);
+    renderFrame();
+    updateStatus();
+  }
+
+  function renderFrame(){
+    elFrame.innerHTML = "";
+
+    const currentColSum = sumCol(board, targetCol);
+    for(let c=0;c<SIZE;c++){
+      const div = document.createElement("div");
+      div.className = "topLabel";
+      div.style.gridRow = "1";
+      div.style.gridColumn = String(c+1);
+
+      if(c === targetCol){
+        div.classList.add("active");
+        const delta = targetColSum - currentColSum;
+        const ok = (delta === 0);
+        div.innerHTML = `${targetColSum} / <span class="delta ${ok ? "ok":"bad"}">${fmtDelta(delta)}</span>`;
+      } else {
+        div.textContent = "";
+      }
+      elFrame.appendChild(div);
+    }
+
+    const currentRowSum = sumRow(board, targetRow);
+    for(let r=0;r<SIZE;r++){
+      const div = document.createElement("div");
+      div.className = "rightLabel";
+      div.style.gridColumn = "5";
+      div.style.gridRow = String(r+2);
+
+      if(r === targetRow){
+        div.classList.add("active");
+        const delta = targetRowSum - currentRowSum;
+        const ok = (delta === 0);
+        div.innerHTML = `${targetRowSum} / <span class="delta ${ok ? "ok":"bad"}">${fmtDelta(delta)}</span>`;
+      } else {
+        div.textContent = "";
+      }
+      elFrame.appendChild(div);
+    }
+
+    for(let i=0;i<CELLS;i++){
+      const r = Math.floor(i / SIZE);
+      const c = i % SIZE;
+
+      const v = board[i];
+      const btn = document.createElement("button");
+      btn.className = "tile";
+      btn.style.gridRow = String(r + 2);
+      btn.style.gridColumn = String(c + 1);
+      btn.setAttribute("data-idx", String(i));
+
+      if(r === targetRow) btn.classList.add("inRow");
+      if(c === targetCol) btn.classList.add("inCol");
+
+      if(v === null){
+        btn.classList.add("blank");
+        btn.textContent = "□";
+        btn.disabled = true;
+        btn.setAttribute("aria-label", "빈칸");
+      } else {
+        btn.textContent = String(v);
+        btn.setAttribute("aria-label", `타일 ${v}`);
+        btn.addEventListener("click", () => tryMove(i));
+      }
+
+      elFrame.appendChild(btn);
+    }
+  }
+
+  function updateStatus(){
+    const okRow = (sumRow(board, targetRow) === targetRowSum);
+    const okCol = (sumCol(board, targetCol) === targetColSum);
+
+    if(cleared) elStatusSub.textContent = "클리어";
+    else if(gameOver) elStatusSub.textContent = "게임 오버";
+    else elStatusSub.textContent = (okRow && okCol) ? "클리어 조건 충족" : `${okRow ? "가로 OK" : "가로 X"} / ${okCol ? "세로 OK" : "세로 X"}`;
+  }
+
+  function tryMove(tileIdx){
+    if(cleared || gameOver) return;
+    if(!isAdjacent(tileIdx, blank)) return;
+
+    board[blank] = board[tileIdx];
+    board[tileIdx] = null;
+    blank = tileIdx;
+
+    moveCount++;
+    elMoveCount.textContent = String(moveCount);
+
+    renderFrame();
+    updateStatus();
+
+    const okRow = (sumRow(board, targetRow) === targetRowSum);
+    const okCol = (sumCol(board, targetCol) === targetColSum);
+
+    if(okRow && okCol){
+      cleared = true;
+      stopTimer();
+      updateStatus();
+
+      const used = STAGE_TIME_SEC - timeLeft;
+      showModal("클리어", `가로/세로 목표를 동시에 맞췄습니다.<br/>총 이동: ${moveCount}<br/>소요 시간: ${fmtTime(used)}`, "확인", () => {
+        newStage(stage + 1);
+      });
+    }
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)){
+      e.preventDefault();
+      if(cleared || gameOver) return;
+
+      const r = Math.floor(blank / SIZE), c = blank % SIZE;
+      let from = null;
+
+      if(e.key === "ArrowLeft" && c > 0) from = blank - 1;
+      if(e.key === "ArrowRight" && c < SIZE-1) from = blank + 1;
+      if(e.key === "ArrowUp" && r > 0) from = blank - SIZE;
+      if(e.key === "ArrowDown" && r < SIZE-1) from = blank + SIZE;
+
+      if(from !== null) tryMove(from);
+    }
+  });
+
+  let modalAction = null;
+  function showModal(title, bodyHtml, okText, onOk){
+    modalTitle.textContent = title;
+    modalBody.innerHTML = bodyHtml;
+    modalOk.textContent = okText || "확인";
+    modalAction = onOk || null;
+    modal.classList.add("show");
+  }
+  function hideModal(){
+    modal.classList.remove("show");
+    modalAction = null;
+  }
+  modalOk.addEventListener("click", () => {
+    const act = modalAction;
+    hideModal();
+    if(typeof act === "function") act();
+  });
+
+  btnRestart.addEventListener("click", () => restartStage());
+
+  newStage(1);
+})();
+</script>
+</body>
+</html>
